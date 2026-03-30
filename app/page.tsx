@@ -172,6 +172,7 @@ export default function Page() {
   const [chosen, setChosen] = useState<GeneratedRecipe[]>([])
   const [storedRecipes, setStoredRecipes] = useState<GeneratedRecipe[]>([MOCK_RECIPES[0], MOCK_RECIPES[2]])
   const [activeRecipe, setActiveRecipe] = useState<GeneratedRecipe | null>(null)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
 
   const current = generated[reviewIndex]
 
@@ -217,6 +218,18 @@ export default function Page() {
     setStoredRecipes((prev) => (prev.some((item) => item.title === recipe.title) ? prev : [...prev, recipe]))
   }
 
+  function handleTouchStart(e: React.TouchEvent) {
+    setTouchStartX(e.changedTouches[0].clientX)
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX === null || !current) return
+    const delta = e.changedTouches[0].clientX - touchStartX
+    if (delta > 80) chooseYes()
+    if (delta < -80) chooseNo()
+    setTouchStartX(null)
+  }
+
   const shoppingList = useMemo(() => {
     const needed = new Map<string, string>()
     chosen.forEach((recipe) => {
@@ -228,131 +241,137 @@ export default function Page() {
   }, [chosen])
 
   return (
-    <main className="min-h-screen bg-emerald-50 text-slate-900">
+    <main className="min-h-screen bg-[#eef0e7] text-slate-900 [font-family:Georgia,ui-serif,serif]">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
-        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-black shadow-lg">
-              <img src="/zumbie-kitchen-logo.png" alt="Zumbie Kitchen logo" className="h-full w-full object-cover" />
-            </div>
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/5 px-3 py-1 text-xs uppercase tracking-[0.25em] text-slate-600">
-                Start the week
+        <div className="mb-8 rounded-[2rem] border border-[#d8ddcf] bg-[#f7f4eb] p-5 shadow-[0_10px_40px_rgba(88,101,89,0.08)] md:p-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[#d8ddcf] bg-black shadow-lg">
+                <img src="/zumbie-kitchen-logo.png" alt="Zumbie Kitchen logo" className="h-full w-full object-cover" />
               </div>
-              <h1 className="mt-2 text-4xl font-semibold tracking-tight">Zumbie Kitchen</h1>
-              <p className="mt-2 max-w-2xl text-slate-600">
-                Suggest meals, yes/no the ones you want, build your week, then open a recipe card or produce the shopping list.
-              </p>
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#d8ddcf] bg-[#edf1e8] px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#617062]">
+                  Start the week
+                </div>
+                <h1 className="mt-3 text-5xl font-semibold tracking-tight text-[#334134] md:text-6xl">Zumbie Kitchen</h1>
+                <p className="mt-3 max-w-2xl text-lg leading-8 text-[#667066] md:text-xl">
+                  Suggest meals, yes or no your way through them, build the week, then open a premium recipe card or pull the shopping list.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" className="rounded-2xl bg-cream-100 text-slate-900 hover:bg-emerald-50/90" onClick={randomDinner} disabled={!chosen.length}>
-              <Dice3 className="mr-2 h-4 w-4" /> Pick tonight at random
-            </Button>
-            <Button variant="outline" className="rounded-2xl border-emerald-300 bg-transparent text-white hover:bg-emerald-50/10" onClick={clearWeek}>
-              <RotateCcw className="mr-2 h-4 w-4" /> Clear week
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="secondary" className="rounded-2xl border border-[#cfd7c8] bg-[#e2e8dd] px-5 py-6 text-base text-slate-900 hover:bg-[#d8e0d2]" onClick={randomDinner} disabled={!chosen.length}>
+                <Dice3 className="mr-2 h-5 w-5" /> Pick tonight at random
+              </Button>
+              <Button variant="outline" className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] px-5 py-6 text-base text-slate-700 hover:bg-[#efe9dc]" onClick={clearWeek}>
+                <RotateCcw className="mr-2 h-5 w-5" /> Clear week
+              </Button>
+            </div>
           </div>
         </div>
 
         <Tabs defaultValue="planner" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl bg-emerald-50 p-1 shadow-sm">
-            <TabsTrigger value="planner" className="rounded-xl text-slate-700 data-[state=active]:bg-emerald-200 data-[state=active]:text-white">Planner</TabsTrigger>
-            <TabsTrigger value="week" className="rounded-xl text-slate-700 data-[state=active]:bg-emerald-200 data-[state=active]:text-white">Chosen meals</TabsTrigger>
-            <TabsTrigger value="shopping" className="rounded-xl text-slate-700 data-[state=active]:bg-emerald-200 data-[state=active]:text-white">Shopping list</TabsTrigger>
-            <TabsTrigger value="stored" className="rounded-xl text-slate-700 data-[state=active]:bg-emerald-200 data-[state=active]:text-white">Stored recipes</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-[1.5rem] border border-[#d8ddcf] bg-[#f7f4eb] p-1 shadow-sm">
+            <TabsTrigger value="planner" className="rounded-[1rem] text-base text-slate-700 data-[state=active]:bg-[#8fa18c] data-[state=active]:text-white">Planner</TabsTrigger>
+            <TabsTrigger value="week" className="rounded-[1rem] text-base text-slate-700 data-[state=active]:bg-[#8fa18c] data-[state=active]:text-white">Chosen meals</TabsTrigger>
+            <TabsTrigger value="shopping" className="rounded-[1rem] text-base text-slate-700 data-[state=active]:bg-[#8fa18c] data-[state=active]:text-white">Shopping list</TabsTrigger>
+            <TabsTrigger value="stored" className="rounded-[1rem] text-base text-slate-700 data-[state=active]:bg-[#8fa18c] data-[state=active]:text-white">Stored recipes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="planner" className="mt-6">
-            <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-              <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+            <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+              <Card className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-[0_10px_40px_rgba(88,101,89,0.08)]">
                 <CardHeader>
-                  <CardTitle>Plan the week</CardTitle>
-                  <CardDescription className="text-slate-500">Choose how many ideas you want, add what you fancy, or tell it what you already have in.</CardDescription>
+                  <CardTitle className="text-3xl text-[#334134]">Plan the week</CardTitle>
+                  <CardDescription className="text-base leading-7 text-[#667066]">Choose how many ideas you want, add what you fancy, or tell it what you already have in.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-5">
+                <CardContent className="space-y-6">
                   <div>
-                    <label className="mb-2 block text-sm text-slate-600">How many recipes to suggest?</label>
-                    <Input type="number" min={1} max={10} value={suggestCount} onChange={(e) => setSuggestCount(Number(e.target.value) || 1)} className="border-emerald-200 bg-emerald-100 text-slate-900" />
+                    <label className="mb-2 block text-base text-[#5f6b60]">How many recipes to suggest?</label>
+                    <Input type="number" min={1} max={10} value={suggestCount} onChange={(e) => setSuggestCount(Number(e.target.value) || 1)} className="h-14 rounded-2xl border-[#d8ddcf] bg-white text-lg" />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm text-slate-600">I fancy this...</label>
-                    <Input value={iFancy} onChange={(e) => setIFancy(e.target.value)} placeholder="Something creamy, curry, pasta bake, comfort food..." className="border-emerald-200 bg-emerald-100 text-slate-900 placeholder:text-white/35" />
+                    <label className="mb-2 block text-base text-[#5f6b60]">I fancy this...</label>
+                    <Input value={iFancy} onChange={(e) => setIFancy(e.target.value)} placeholder="Something creamy, curry, pasta bake, comfort food..." className="h-14 rounded-2xl border-[#d8ddcf] bg-white text-lg placeholder:text-[#9ca59b]" />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm text-slate-600">We have this in...</label>
-                    <Input value={weHave} onChange={(e) => setWeHave(e.target.value)} placeholder="Chicken, leeks, mushrooms, rice, thyme..." className="border-emerald-200 bg-emerald-100 text-slate-900 placeholder:text-white/35" />
+                    <label className="mb-2 block text-base text-[#5f6b60]">We have this in...</label>
+                    <Input value={weHave} onChange={(e) => setWeHave(e.target.value)} placeholder="Chicken, leeks, mushrooms, rice, thyme..." className="h-14 rounded-2xl border-[#d8ddcf] bg-white text-lg placeholder:text-[#9ca59b]" />
                   </div>
 
                   <div className="flex gap-3">
-                    <Button className="flex-1 rounded-2xl bg-emerald-300 text-slate-950 hover:bg-amber-200" onClick={suggestMeals}>
-                      <Sparkles className="mr-2 h-4 w-4" /> Suggest meals
+                    <Button className="flex-1 rounded-2xl bg-[#8fa18c] py-6 text-base text-white hover:bg-[#7f927c]" onClick={suggestMeals}>
+                      <Sparkles className="mr-2 h-5 w-5" /> Suggest meals
                     </Button>
-                    <Button variant="outline" className="rounded-2xl border-emerald-300 bg-transparent text-white hover:bg-emerald-50/10" onClick={clearWeek}>
+                    <Button variant="outline" className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] py-6 text-base text-slate-700 hover:bg-[#efe9dc]" onClick={clearWeek}>
                       Clear
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+              <Card className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-[0_10px_40px_rgba(88,101,89,0.08)]">
                 <CardHeader>
-                  <CardTitle>Review suggestions</CardTitle>
-                  <CardDescription className="text-slate-500">Say yes or no. When you confirm the week, they move into tiles.</CardDescription>
+                  <CardTitle className="text-3xl text-[#334134]">Review suggestions</CardTitle>
+                  <CardDescription className="text-base leading-7 text-[#667066]">Say yes or no. Swipe right for yes, left for no on mobile.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {current ? (
                     <div className="space-y-5">
                       <div className="flex items-center justify-between">
-                        <Badge className="rounded-full bg-emerald-50/10 text-white">{reviewIndex + 1} / {generated.length}</Badge>
-                        <Badge className="rounded-full bg-emerald-50/10 text-white">{current.style}</Badge>
+                        <Badge className="rounded-full bg-[#e4eadf] px-4 py-2 text-sm text-[#425343]">{reviewIndex + 1} / {generated.length}</Badge>
+                        <Badge className="rounded-full bg-[#e4eadf] px-4 py-2 text-sm text-[#425343]">{current.style}</Badge>
                       </div>
 
-                      <div className="rounded-3xl bg-emerald-200 p-6">
-                        <h2 className="text-3xl font-semibold">{current.title}</h2>
-                        <p className="mt-3 text-slate-600">{current.summary}</p>
+                      <div
+                        className="rounded-[2rem] border border-[#d8ddcf] bg-gradient-to-b from-[#dfe7db] to-[#f6f2e8] p-7 shadow-[0_12px_40px_rgba(103,116,103,0.12)]"
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                      >
+                        <h2 className="text-4xl font-semibold leading-tight text-[#334134] md:text-5xl">{current.title}</h2>
+                        <p className="mt-4 text-lg leading-8 text-[#5f6b60] md:text-xl">{current.summary}</p>
 
-                        <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="mt-6 flex flex-wrap gap-2">
                           {current.ingredients.slice(0, 6).map((item) => (
-                            <Badge key={item.name} className="rounded-full bg-emerald-50/10 text-white">
+                            <Badge key={item.name} className="rounded-full bg-white px-4 py-2 text-sm text-[#425343] shadow-sm">
                               {item.name}
                             </Badge>
                           ))}
                         </div>
 
-                        <div className="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600 md:grid-cols-4">
-                          <div className="rounded-2xl bg-emerald-50/5 p-3">Prep {current.prepTime}m</div>
-                          <div className="rounded-2xl bg-emerald-50/5 p-3">Cook {current.cookTime}m</div>
-                          <div className="rounded-2xl bg-emerald-50/5 p-3">Spices included</div>
-                          <div className="rounded-2xl bg-emerald-50/5 p-3">Little one friendly</div>
+                        <div className="mt-6 grid grid-cols-2 gap-3 text-base text-[#5f6b60] md:grid-cols-4">
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">Prep {current.prepTime}m</div>
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">Cook {current.cookTime}m</div>
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">Spices included</div>
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">Little one friendly</div>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-3">
-                        <Button className="rounded-2xl bg-emerald-400 text-white hover:bg-emerald-400" onClick={chooseYes}>
-                          <Heart className="mr-2 h-4 w-4" /> Yes
+                        <Button className="rounded-2xl bg-[#9ab88e] px-5 py-6 text-base text-white hover:bg-[#88a67c]" onClick={chooseYes}>
+                          <Heart className="mr-2 h-5 w-5" /> Yes
                         </Button>
-                        <Button variant="secondary" className="rounded-2xl bg-cream-100 text-slate-900 hover:bg-emerald-50/90" onClick={chooseNo}>
-                          <X className="mr-2 h-4 w-4" /> No
+                        <Button variant="secondary" className="rounded-2xl border border-[#d8ddcf] bg-white px-5 py-6 text-base text-slate-800 hover:bg-[#f2eee4]" onClick={chooseNo}>
+                          <X className="mr-2 h-5 w-5" /> No
                         </Button>
-                        <Button variant="outline" className="rounded-2xl border-emerald-300 bg-transparent text-white hover:bg-emerald-50/10" onClick={() => setActiveRecipe(current)}>
-                          <BookOpen className="mr-2 h-4 w-4" /> Open recipe
+                        <Button variant="outline" className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] px-5 py-6 text-base text-slate-700 hover:bg-[#efe9dc]" onClick={() => setActiveRecipe(current)}>
+                          <BookOpen className="mr-2 h-5 w-5" /> Open recipe
                         </Button>
-                        <Button variant="outline" className="rounded-2xl border-emerald-300 bg-transparent text-white hover:bg-emerald-50/10" onClick={() => addStoredRecipe(current)}>
+                        <Button variant="outline" className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] px-5 py-6 text-base text-slate-700 hover:bg-[#efe9dc]" onClick={() => addStoredRecipe(current)}>
                           Save to stored recipes
                         </Button>
                       </div>
                     </div>
                   ) : generated.length ? (
-                    <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-200 p-10 text-center text-slate-600">
-                      You have reviewed this batch. Head to <span className="font-medium text-white">Chosen meals</span> to confirm the week.
+                    <div className="rounded-[2rem] border border-dashed border-[#d8ddcf] bg-[#eef0e7] p-10 text-center text-lg text-[#667066]">
+                      You have reviewed this batch. Head to <span className="font-medium text-[#334134]">Chosen meals</span> to confirm the week.
                     </div>
                   ) : (
-                    <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-200 p-10 text-center text-slate-600">
-                      Hit <span className="font-medium text-white">Suggest meals</span> to start your week.
+                    <div className="rounded-[2rem] border border-dashed border-[#d8ddcf] bg-[#eef0e7] p-10 text-center text-lg text-[#667066]">
+                      Hit <span className="font-medium text-[#334134]">Suggest meals</span> to start your week.
                     </div>
                   )}
                 </CardContent>
@@ -363,55 +382,55 @@ export default function Page() {
           <TabsContent value="week" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {chosen.length ? chosen.map((recipe) => (
-                <Card key={recipe.id} className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+                <Card key={recipe.id} className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-[0_10px_40px_rgba(88,101,89,0.08)]">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <CardTitle className="text-xl">{recipe.title}</CardTitle>
-                        <CardDescription className="text-slate-500">{recipe.summary}</CardDescription>
+                        <CardTitle className="text-2xl text-[#334134]">{recipe.title}</CardTitle>
+                        <CardDescription className="mt-2 text-base leading-7 text-[#667066]">{recipe.summary}</CardDescription>
                       </div>
-                      <Badge className="rounded-full bg-emerald-50/10 text-white">{recipe.style}</Badge>
+                      <Badge className="rounded-full bg-[#e4eadf] text-[#425343]">{recipe.style}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex flex-wrap gap-2">
                       {recipe.ingredients.slice(0, 4).map((item) => (
-                        <Badge key={item.name} className="rounded-full bg-emerald-50/10 text-white">{item.name}</Badge>
+                        <Badge key={item.name} className="rounded-full bg-white text-[#425343] shadow-sm">{item.name}</Badge>
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <Button className="flex-1 rounded-2xl bg-cream-100 text-slate-900 hover:bg-emerald-50/90" onClick={() => setActiveRecipe(recipe)}>
+                      <Button className="flex-1 rounded-2xl bg-[#8fa18c] py-6 text-base text-white hover:bg-[#7f927c]" onClick={() => setActiveRecipe(recipe)}>
                         Open recipe card
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               )) : (
-                <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900 md:col-span-2 xl:col-span-3">
-                  <CardContent className="p-10 text-center text-slate-600">No chosen meals yet. Review suggestions and hit yes on the ones you want for the week.</CardContent>
+                <Card className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-sm md:col-span-2 xl:col-span-3">
+                  <CardContent className="p-10 text-center text-lg text-[#667066]">No chosen meals yet. Review suggestions and hit yes on the ones you want for the week.</CardContent>
                 </Card>
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="shopping" className="mt-6">
-            <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+            <Card className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-[0_10px_40px_rgba(88,101,89,0.08)]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ShoppingBasket className="h-5 w-5" /> Shopping list</CardTitle>
-                <CardDescription className="text-slate-500">Everything needed for the meals you have chosen this week.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-3xl text-[#334134]"><ShoppingBasket className="h-6 w-6" /> Shopping list</CardTitle>
+                <CardDescription className="text-base leading-7 text-[#667066]">Everything needed for the meals you have chosen this week.</CardDescription>
               </CardHeader>
               <CardContent>
                 {shoppingList.length ? (
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {shoppingList.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between rounded-2xl bg-emerald-200 px-4 py-3 text-sm">
+                      <div key={item.name} className="flex items-center justify-between rounded-2xl border border-[#d8ddcf] bg-white px-4 py-4 text-base shadow-sm">
                         <span>{item.name}</span>
-                        <Badge className="rounded-full bg-emerald-50/10 text-white">{item.amount}</Badge>
+                        <Badge className="rounded-full bg-[#e4eadf] text-[#425343]">{item.amount}</Badge>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-200 p-10 text-center text-slate-600">
+                  <div className="rounded-[2rem] border border-dashed border-[#d8ddcf] bg-[#eef0e7] p-10 text-center text-lg text-[#667066]">
                     Choose some meals first and your shopping list will appear here.
                   </div>
                 )}
@@ -420,29 +439,29 @@ export default function Page() {
           </TabsContent>
 
           <TabsContent value="stored" className="mt-6">
-            <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-slate-600 shadow-sm">
+            <div className="mb-4 rounded-2xl border border-[#d8ddcf] bg-[#f7f4eb] px-4 py-4 text-base text-[#667066] shadow-sm">
               Stored recipes are your keepers. Open them anytime or delete the ones you do not want to keep.
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {storedRecipes.map((recipe) => (
-                <Card key={recipe.title} className="rounded-3xl border-slate-200 bg-emerald-50 text-slate-900 shadow-sm">
+                <Card key={recipe.title} className="rounded-[2rem] border-[#d8ddcf] bg-[#f7f4eb] text-slate-900 shadow-[0_10px_40px_rgba(88,101,89,0.08)]">
                   <CardHeader>
-                    <CardTitle>{recipe.title}</CardTitle>
-                    <CardDescription className="text-slate-600">Saved favourite to reuse in future weeks.</CardDescription>
+                    <CardTitle className="text-2xl text-[#334134]">{recipe.title}</CardTitle>
+                    <CardDescription className="text-base leading-7 text-[#667066]">Saved favourite to reuse in future weeks.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex flex-wrap gap-2">
                       {recipe.ingredients.slice(0, 4).map((item) => (
-                        <Badge key={item.name} className="rounded-full bg-slate-100 text-slate-800">{item.name}</Badge>
+                        <Badge key={item.name} className="rounded-full bg-white text-[#425343] shadow-sm">{item.name}</Badge>
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <Button className="flex-1 rounded-2xl bg-emerald-200 text-white hover:bg-slate-800" onClick={() => setActiveRecipe(recipe)}>
+                      <Button className="flex-1 rounded-2xl bg-[#8fa18c] py-6 text-base text-white hover:bg-[#7f927c]" onClick={() => setActiveRecipe(recipe)}>
                         Open recipe
                       </Button>
                       <Button
                         variant="outline"
-                        className="rounded-2xl border-slate-300 text-slate-700 hover:bg-slate-50"
+                        className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] px-5 py-6 text-base text-slate-700 hover:bg-[#efe9dc]"
                         onClick={() => setStoredRecipes((prev) => prev.filter((item) => item.title !== recipe.title))}
                       >
                         Delete
@@ -456,59 +475,59 @@ export default function Page() {
         </Tabs>
 
         {activeRecipe ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl border border-emerald-200 bg-slate-950 p-6 text-white shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+            <div className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-[2rem] border border-[#d8ddcf] bg-[#f7f4eb] p-6 text-slate-900 shadow-[0_24px_80px_rgba(73,82,73,0.18)] md:p-8">
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
-                  <Badge className="rounded-full bg-emerald-50/10 text-white">{activeRecipe.style}</Badge>
-                  <h2 className="mt-3 text-3xl font-semibold">{activeRecipe.title}</h2>
-                  <p className="mt-2 text-slate-600">{activeRecipe.summary}</p>
+                  <Badge className="rounded-full bg-[#e4eadf] text-[#425343]">{activeRecipe.style}</Badge>
+                  <h2 className="mt-3 text-4xl font-semibold text-[#334134] md:text-5xl">{activeRecipe.title}</h2>
+                  <p className="mt-3 max-w-2xl text-lg leading-8 text-[#667066]">{activeRecipe.summary}</p>
                 </div>
-                <Button variant="outline" className="rounded-2xl border-emerald-300 bg-transparent text-white hover:bg-emerald-50/10" onClick={() => setActiveRecipe(null)}>
+                <Button variant="outline" className="rounded-2xl border-[#cfd7c8] bg-[#f7f4eb] text-slate-700 hover:bg-[#efe9dc]" onClick={() => setActiveRecipe(null)}>
                   Close
                 </Button>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-                <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+                <Card className="rounded-[2rem] border-[#d8ddcf] bg-white text-slate-900 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Recipe card</CardTitle>
+                    <CardTitle className="text-3xl text-[#334134]">Recipe card</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {activeRecipe.ingredients.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between rounded-2xl bg-emerald-200 px-4 py-3 text-sm">
+                      <div key={item.name} className="flex items-center justify-between rounded-2xl border border-[#e7ebdf] bg-[#fbfaf6] px-4 py-4 text-base">
                         <div>
                           <div>{item.name}</div>
-                          <div className="mt-1 text-xs text-white/45">{item.haveIt ? "In already" : "Need to buy"}</div>
+                          <div className="mt-1 text-sm text-[#8c948a]">{item.haveIt ? "In already" : "Need to buy"}</div>
                         </div>
-                        <Badge className="rounded-full bg-emerald-50/10 text-white">{item.amount}</Badge>
+                        <Badge className="rounded-full bg-[#e4eadf] text-[#425343]">{item.amount}</Badge>
                       </div>
                     ))}
                   </CardContent>
                 </Card>
 
                 <div className="space-y-6">
-                  <Card className="rounded-3xl border-emerald-200 bg-emerald-100 text-slate-900">
+                  <Card className="rounded-[2rem] border-[#d8ddcf] bg-white text-slate-900 shadow-sm">
                     <CardHeader>
-                      <CardTitle>Cooking instructions</CardTitle>
+                      <CardTitle className="text-3xl text-[#334134]">Cooking instructions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {activeRecipe.steps.map((step, idx) => (
-                        <div key={idx} className="flex gap-3 rounded-2xl bg-emerald-200 px-4 py-3 text-sm">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-300 text-xs font-semibold text-slate-950">{idx + 1}</div>
-                          <div className="pt-1">{step}</div>
+                        <div key={idx} className="flex gap-3 rounded-2xl border border-[#e7ebdf] bg-[#fbfaf6] px-4 py-4 text-base leading-7">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8fa18c] text-sm font-semibold text-white">{idx + 1}</div>
+                          <div className="pt-0.5">{step}</div>
                         </div>
                       ))}
                     </CardContent>
                   </Card>
 
-                  <Card className="rounded-3xl border-amber-300/20 bg-emerald-300/10 text-white">
+                  <Card className="rounded-[2rem] border-[#d8ddcf] bg-[#edf1e8] text-slate-900 shadow-sm">
                     <CardHeader>
-                      <CardTitle>Little one tips</CardTitle>
+                      <CardTitle className="text-3xl text-[#334134]">Little one tips</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {activeRecipe.littleOneTips.map((tip, idx) => (
-                        <div key={idx} className="rounded-2xl bg-emerald-200 px-4 py-3 text-sm text-white/85">
+                        <div key={idx} className="rounded-2xl border border-[#d8ddcf] bg-[#fbfaf6] px-4 py-4 text-base leading-7 text-[#5f6b60]">
                           {tip}
                         </div>
                       ))}
