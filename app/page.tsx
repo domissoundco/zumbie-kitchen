@@ -654,6 +654,7 @@ export default function ZumbieKitchen() {
         .nav-logo-text { font-family: 'Sora', sans-serif; font-size: 1.7rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
         .nav-logo-text span { color: var(--amber); }
         .cooking-for { display: flex; align-items: center; gap: 0.5rem; background: var(--green-bg); border: 1.5px solid var(--green-border); border-radius: 12px; padding: 0.55rem 1rem; }
+        .cooking-for-mobile { display: none; }
         .cooking-for-label { font-size: 0.78rem; font-weight: 700; color: var(--green); white-space: nowrap; }
         .cooking-for-divider { width: 1px; height: 20px; background: var(--green-border); margin: 0 0.25rem; }
         .people-ctrl { display: flex; align-items: center; gap: 0.5rem; }
@@ -671,7 +672,27 @@ export default function ZumbieKitchen() {
 
         /* Panels */
         .panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2.5rem; align-items: stretch; }
-        @media (max-width: 760px) { .panels { grid-template-columns: 1fr; } .cooking-for { display: none; } }
+        @media (max-width: 760px) {
+          .panels { grid-template-columns: 1fr; }
+          .nav { height: 64px; padding: 0 1rem; }
+          .nav-logo-text { font-size: 1.35rem; }
+          .cooking-for-desktop { display: none; }
+          .cooking-for-mobile {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            border-radius: 0;
+            border: none;
+            border-bottom: 2px solid var(--green-border);
+            padding: 0.55rem 1rem;
+            position: sticky;
+            top: 64px;
+            z-index: 49;
+            width: 100%;
+          }
+        }
         .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 1rem; }
         .panel-top { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
         .panel-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); }
@@ -835,7 +856,7 @@ export default function ZumbieKitchen() {
       {/* Nav */}
       <nav className="nav">
         <span className="nav-logo-text">Zumbie <span>Kitchen</span></span>
-        <div className="cooking-for">
+        <div className="cooking-for cooking-for-desktop">
           <span className="cooking-for-label">🍽 Cooking for</span>
           <div className="cooking-for-divider" />
           <div className="people-ctrl">
@@ -849,6 +870,20 @@ export default function ZumbieKitchen() {
           </div>
         </div>
       </nav>
+      {/* Mobile-only cooking-for bar */}
+      <div className="cooking-for cooking-for-mobile">
+        <span className="cooking-for-label">🍽 Cooking for</span>
+        <div className="cooking-for-divider" />
+        <div className="people-ctrl">
+          <span className="people-label">👨‍👩‍👧 Adults</span>
+          <Counter value={adults} onChange={setAdults} min={1} max={20} />
+        </div>
+        <div className="cooking-for-divider" />
+        <div className="people-ctrl">
+          <span className="people-label">🍼 Under 2s</span>
+          <Counter value={children} onChange={setChildren} min={0} max={10} />
+        </div>
+      </div>
 
       <div className="page">
 
