@@ -9,64 +9,93 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const inventory = Array.isArray(body.inventory) ? body.inventory : []
     const count = Math.max(1, Math.min(Number(body.count) || 5, 10))
-    const fancy = body.i_fancy || "something tasty and family-friendly"
+    const iFancy = body.i_fancy || ""
+    const inventory: string[] = body.inventory || []
+    const adults = body.family?.adults || 2
+    const children = body.family?.children_under_2 || 0
 
     const prompt = `
 You are a premium family meal planner.
 
-Create ${count} recipe ideas.
+Your job is to create ${count} HIGH-QUALITY, REALISTIC recipes.
 
-The user says:
-- I fancy: ${fancy}
-- We already have: ${inventory.join(", ") || "nothing specified"}
+USER CONTEXT:
+- Adults: ${adults}
+- Children under 2: ${children}
 
-Requirements:
-- Use the ingredients they already have where possible
-- Add herbs, spices, sauces and pantry items intelligently
-- Avoid random unrelated proteins unless clearly helpful
-- Keep meals realistic for a family week
-- Suitable for mum, dad and a little one
-- Keep flavours interesting but not overly spicy
-- Return recipes that feel cohesive and actually cookable
+USER INPUT:
+- I fancy: ${iFancy || "no specific preference"}
+- Ingredients available: ${inventory.length ? inventory.join(", ") : "none specified"}
 
-Return valid JSON only in this shape:
+STRICT RULES:
+- PRIORITISE using the provided ingredients
+- DO NOT introduce random proteins (e.g. chicken) unless clearly appropriate
+- If paneer is given → recipes MUST use paneer
+- Meals must feel cohesive, not random combinations
+- Include herbs, spices, oils, sauces naturally
+- Think like a chef, not a random generator
+
+FAMILY RULES:
+- Adjust portion sizes for ${adults} adults
+- Children under 2 must:
+  - have low salt
+  - soft textures
+  - simple flavour adjustments
+- Include "little_one_tips" for each recipe
+
+RECIPE QUALITY:
+- These should feel like £15 cookbook meals
+- Balanced, realistic, cookable
+- Not generic or boring
+
+RETURN ONLY VALID JSON:
+
 {
   "recipes": [
     {
       "title": "string",
-      "summary": "string",
-      "style": "string",
-      "prep_time_minutes": 10,
-      "cook_time_minutes": 20,
+      "summary": "short appealing description",
+      "style": "e.g. Mediterranean, Comfort, Fresh",
+      "prep_time_minutes": number,
+      "cook_time_minutes": number,
       "ingredients_used": [
-        { "name": "string", "amount": 1, "unit": "string" }
+        { "name": "string", "amount": number, "unit": "string" }
       ],
       "missing_ingredients": [
-        { "name": "string", "amount": 1, "unit": "string" }
+        { "name": "string", "amount": number, "unit": "string" }
       ],
-      "steps": ["string"],
-      "little_one_tips": ["string"]
+      "steps": ["step 1", "step 2"],
+      "little_one_tips": ["tip 1", "tip 2"]
     }
   ]
 }
 `
 
     const response = await client.responses.create({
-      model: "gpt-5.4-mini",
+      model: "gpt-4.1-mini",
       input: prompt,
     })
 
     const text = response.output_text || ""
-    const parsed = JSON.parse(text)
+
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch (err) {
+      console.error("JSON parse error:", text)
+      throw new Error("AI response was not valid JSON")
+    }
 
     return NextResponse.json(parsed)
+
   } catch (error: any) {
-    console.error("GENERATE RECIPES ERROR:", error)
+    console.error("API ERROR:", error)
+
     return NextResponse.json(
       {
-        message: error?.message || "Failed to generate recipes",
+        ok: false,
+        message: error.message || "Failed to generate recipes",
       },
       { status: 500 }
     )

@@ -83,6 +83,8 @@ function mapRecipe(recipe: ApiRecipe, index: number): Recipe {
 
 export default function Page() {
   const [mealCount, setMealCount] = useState(5)
+  const [adults, setAdults] = useState(2)
+  const [childrenUnder2, setChildrenUnder2] = useState(1)
   const [iFancy, setIFancy] = useState("")
   const [weHave, setWeHave] = useState("")
   const [suggested, setSuggested] = useState<Recipe[]>([])
@@ -113,9 +115,9 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           count: mealCount,
-          i_fancy: iFancy,
+          i_fancy: iFancy.trim(),
           inventory,
-          family: { mum: 1, dad: 1, son: 1 },
+          family: { adults, children_under_2: childrenUnder2 },
         }),
       })
 
@@ -125,6 +127,9 @@ export default function Page() {
       }
 
       const next = (data.recipes || []).map((recipe: ApiRecipe, idx: number) => mapRecipe(recipe, idx))
+      if (!next.length) {
+        throw new Error("No recipes came back. Try using fewer fields or just one idea in the boxes.")
+      }
       setSuggested(next)
       setSuggestedIndex(0)
     } catch (error: any) {
@@ -190,7 +195,7 @@ export default function Page() {
               <CardHeader>
                 <CardTitle className={`${displayFont.className} text-3xl text-[#314230]`}>Workflow</CardTitle>
                 <CardDescription className="text-[#6b7267]">
-                  Make a batch of meals or tell it what you already have in and let OpenAI build the week.
+                  Pick one route: choose how many meals to build, or tell it what you fancy, or tell it what you already have in. You do not need to fill in every box.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -206,12 +211,37 @@ export default function Page() {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#5f675c]">Adults</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={6}
+                      value={adults}
+                      onChange={(e) => setAdults(Number(e.target.value) || 1)}
+                      className="h-14 rounded-2xl border-[#ddd8cb] bg-white text-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#5f675c]">Children (under 2)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={4}
+                      value={childrenUnder2}
+                      onChange={(e) => setChildrenUnder2(Number(e.target.value) || 0)}
+                      className="h-14 rounded-2xl border-[#ddd8cb] bg-white text-lg"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="mb-2 block text-sm font-medium text-[#5f675c]">I fancy this...</label>
                   <Input
                     value={iFancy}
                     onChange={(e) => setIFancy(e.target.value)}
-                    placeholder="Creamy paneer wraps, cosy curry, traybake, something fresh..."
+                    placeholder="Optional: creamy, cosy curry, traybake, something fresh..."
                     className="h-14 rounded-2xl border-[#ddd8cb] bg-white text-base placeholder:text-[#a0a698]"
                   />
                 </div>
@@ -221,7 +251,7 @@ export default function Page() {
                   <Input
                     value={weHave}
                     onChange={(e) => setWeHave(e.target.value)}
-                    placeholder="Peppers, paneer, greek wraps, yoghurt, garlic, spinach..."
+                    placeholder="Optional: peppers, paneer, greek wraps, yoghurt, garlic..."
                     className="h-14 rounded-2xl border-[#ddd8cb] bg-white text-base placeholder:text-[#a0a698]"
                   />
                 </div>
@@ -251,7 +281,13 @@ export default function Page() {
                 ) : null}
 
                 <div className="rounded-[1.5rem] bg-[#f1efe7] px-4 py-4 text-sm leading-7 text-[#6b7267]">
-                  Flow: generate meals → Try or Bin → build recipes for week → compile shopping list → open recipe card → print or mark loved.
+                  <div className="font-medium text-[#556052]">Workflow</div>
+                  <div className="mt-2">1. Choose a number of meals.</div>
+                  <div>2. Optionally add what you fancy.</div>
+                  <div>3. Optionally add what you have in.</div>
+                  <div>4. Hit <span className="font-medium">Suggest full recipes</span>.</div>
+                  <div>5. Try or Bin each idea.</div>
+                  <div>6. Your chosen recipes build the week and shopping list automatically.</div>
                 </div>
               </CardContent>
             </Card>
@@ -457,7 +493,55 @@ export default function Page() {
                   <p className="mt-3 max-w-2xl text-lg leading-8 text-[#6b7267]">{activeRecipe.summary}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => window.print()} variant="outline" className="h-12 rounded-2xl border-[#d8cfbe] bg-[#fffdf8] text-[#556052] hover:bg-[#f3eee2]">
+                  <Button
+                    onClick={() => {
+                      if (!activeRecipe) return
+                      const printWindow = window.open("", "_blank", "width=900,height=1200")
+                      if (!printWindow) return
+                      const ingredients = [
+                        ...activeRecipe.ingredientsUsed.map((item) => `<li>${item.name} — ${item.amount}</li>`),
+                        ...activeRecipe.missingIngredients.map((item) => `<li>${item.name} — ${item.amount} <em>(need to buy)</em></li>`),
+                      ].join("")
+                      const steps = activeRecipe.steps.map((step, idx) => `<li>${step}</li>`).join("")
+                      const tips = activeRecipe.littleOneTips.map((tip) => `<li>${tip}</li>`).join("")
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>${activeRecipe.title}</title>
+                            <style>
+                              body { font-family: Georgia, serif; color: #2f382d; padding: 40px; line-height: 1.6; }
+                              h1, h2 { color: #314230; }
+                              .meta { margin: 12px 0 24px; color: #6b7267; }
+                              .card { border: 1px solid #ddd8cb; border-radius: 18px; padding: 24px; margin-bottom: 24px; background: #fbf8f1; }
+                              ul, ol { padding-left: 22px; }
+                            </style>
+                          </head>
+                          <body>
+                            <h1>${activeRecipe.title}</h1>
+                            <div class="meta">${activeRecipe.style} • Prep ${activeRecipe.prepTime}m • Cook ${activeRecipe.cookTime}m</div>
+                            <p>${activeRecipe.summary}</p>
+                            <div class="card">
+                              <h2>Ingredients</h2>
+                              <ul>${ingredients}</ul>
+                            </div>
+                            <div class="card">
+                              <h2>Cooking instructions</h2>
+                              <ol>${steps}</ol>
+                            </div>
+                            <div class="card">
+                              <h2>Little one tips</h2>
+                              <ul>${tips}</ul>
+                            </div>
+                          </body>
+                        </html>
+                      `)
+                      printWindow.document.close()
+                      printWindow.focus()
+                      printWindow.print()
+                    }}
+                    variant="outline"
+                    className="h-12 rounded-2xl border-[#d8cfbe] bg-[#fffdf8] text-[#556052] hover:bg-[#f3eee2]"
+                  >
                     <Printer className="mr-2 h-4 w-4" /> Print
                   </Button>
                   <Button onClick={() => loveRecipe(activeRecipe)} className="h-12 rounded-2xl bg-[#c99d59] text-white hover:bg-[#b48a4c]">
