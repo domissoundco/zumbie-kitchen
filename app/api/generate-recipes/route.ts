@@ -9,39 +9,48 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
+    const inventory = Array.isArray(body.inventory) ? body.inventory : []
+    const count = Math.max(1, Math.min(Number(body.count) || 5, 10))
+    const fancy = body.i_fancy || "something tasty and family-friendly"
+
     const prompt = `
-You are a practical family meal planner.
+You are a premium family meal planner.
 
-Create ${body.count ?? 3} meal ideas.
+Create ${count} recipe ideas.
 
-Use these ingredients first where possible:
-Proteins: ${(body.proteins ?? []).join(", ")}
-Veg: ${(body.veg ?? []).join(", ")}
-Herbs and spices: ${(body.herbs ?? []).join(", ")}
-Cupboard: ${(body.cupboard ?? []).join(", ")}
-Fridge: ${(body.fridge ?? []).join(", ")}
+The user says:
+- I fancy: ${fancy}
+- We already have: ${inventory.join(", ") || "nothing specified"}
 
-Family:
-Mum portions: ${body.family?.mum ?? 1}
-Dad portions: ${body.family?.dad ?? 1}
-Son portions: ${body.family?.son ?? 1}
+Requirements:
+- Use the ingredients they already have where possible
+- Add herbs, spices, sauces and pantry items intelligently
+- Avoid random unrelated proteins unless clearly helpful
+- Keep meals realistic for a family week
+- Suitable for mum, dad and a little one
+- Keep flavours interesting but not overly spicy
+- Return recipes that feel cohesive and actually cookable
 
-What the user fancies:
-${body.i_fancy ?? "anything tasty"}
-
-Rules:
-- little-one friendly
-- low spice unless clearly requested
-- practical midweek cooking
-- include flavour, not just protein + veg
-- use herbs, spices, sauces and pantry staples when useful
-
-Return a short numbered list only.
-For each meal include:
-- title
-- one-line summary
-- key flavours
-- missing ingredients if any
+Return valid JSON only in this shape:
+{
+  "recipes": [
+    {
+      "title": "string",
+      "summary": "string",
+      "style": "string",
+      "prep_time_minutes": 10,
+      "cook_time_minutes": 20,
+      "ingredients_used": [
+        { "name": "string", "amount": 1, "unit": "string" }
+      ],
+      "missing_ingredients": [
+        { "name": "string", "amount": 1, "unit": "string" }
+      ],
+      "steps": ["string"],
+      "little_one_tips": ["string"]
+    }
+  ]
+}
 `
 
     const response = await client.responses.create({
@@ -49,16 +58,15 @@ For each meal include:
       input: prompt,
     })
 
-    return NextResponse.json({
-      ok: true,
-      text: response.output_text,
-    })
+    const text = response.output_text || ""
+    const parsed = JSON.parse(text)
+
+    return NextResponse.json(parsed)
   } catch (error: any) {
     console.error("GENERATE RECIPES ERROR:", error)
     return NextResponse.json(
       {
-        ok: false,
-        message: error?.message ?? "Unknown error",
+        message: error?.message || "Failed to generate recipes",
       },
       { status: 500 }
     )
